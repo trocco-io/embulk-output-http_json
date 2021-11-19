@@ -31,7 +31,13 @@ dependencies {
     compile "org.embulk:embulk-util-config:0.3.0"
     compile "org.embulk:embulk-util-json:0.1.1"
     compile "javax.validation:validation-api:1.1.0.Final"
-    compile 'org.apache.bval:bval-jsr303:0.5'
+    compile "org.apache.bval:bval-jsr303:0.5"
+
+    compile "org.embulk:embulk-base-restclient:0.10.1"
+    compile("org.embulk:embulk-util-retryhelper-jaxrs:0.8.1") {
+        exclude group: "org.slf4j", module: "slf4j-api"
+    }
+    compile "org.glassfish.jersey.core:jersey-client:3.0.3"
 
     testImplementation "junit:junit:4.+"
     testImplementation "org.embulk:embulk-core:${embulkVersion}"
