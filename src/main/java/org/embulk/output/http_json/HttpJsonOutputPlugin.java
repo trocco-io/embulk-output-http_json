@@ -1,9 +1,7 @@
 package org.embulk.output.http_json;
 
-import java.util.List;
-
 import com.google.common.base.Optional;
-
+import java.util.List;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigDiff;
@@ -13,16 +11,11 @@ import org.embulk.config.TaskReport;
 import org.embulk.config.TaskSource;
 import org.embulk.spi.Exec;
 import org.embulk.spi.OutputPlugin;
-import org.embulk.spi.PageOutput;
 import org.embulk.spi.Schema;
 import org.embulk.spi.TransactionalPageOutput;
 
-public class HttpJsonOutputPlugin
-        implements OutputPlugin
-{
-    public interface PluginTask
-            extends Task
-    {
+public class HttpJsonOutputPlugin implements OutputPlugin {
+    public interface PluginTask extends Task {
         // configuration option 1 (required integer)
         @Config("option1")
         public int getOption1();
@@ -39,10 +32,8 @@ public class HttpJsonOutputPlugin
     }
 
     @Override
-    public ConfigDiff transaction(ConfigSource config,
-            Schema schema, int taskCount,
-            OutputPlugin.Control control)
-    {
+    public ConfigDiff transaction(
+            ConfigSource config, Schema schema, int taskCount, OutputPlugin.Control control) {
         PluginTask task = config.loadConfig(PluginTask.class);
 
         // retryable (idempotent) output:
@@ -54,26 +45,25 @@ public class HttpJsonOutputPlugin
     }
 
     @Override
-    public ConfigDiff resume(TaskSource taskSource,
-            Schema schema, int taskCount,
-            OutputPlugin.Control control)
-    {
-        throw new UnsupportedOperationException("http_json output plugin does not support resuming");
+    public ConfigDiff resume(
+            TaskSource taskSource, Schema schema, int taskCount, OutputPlugin.Control control) {
+        throw new UnsupportedOperationException(
+                "http_json output plugin does not support resuming");
     }
 
     @Override
-    public void cleanup(TaskSource taskSource,
-            Schema schema, int taskCount,
-            List<TaskReport> successTaskReports)
-    {
-    }
+    public void cleanup(
+            TaskSource taskSource,
+            Schema schema,
+            int taskCount,
+            List<TaskReport> successTaskReports) {}
 
     @Override
-    public TransactionalPageOutput open(TaskSource taskSource, Schema schema, int taskIndex)
-    {
+    public TransactionalPageOutput open(TaskSource taskSource, Schema schema, int taskIndex) {
         PluginTask task = taskSource.loadTask(PluginTask.class);
 
         // Write your code here :)
-        throw new UnsupportedOperationException("HttpJsonOutputPlugin.run method is not implemented yet");
+        throw new UnsupportedOperationException(
+                "HttpJsonOutputPlugin.run method is not implemented yet");
     }
 }
