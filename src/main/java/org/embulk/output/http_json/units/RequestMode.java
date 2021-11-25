@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.embulk.config.ConfigException;
 
+@Deprecated
 public enum RequestMode {
     DIRECT,
     BUFFERED;

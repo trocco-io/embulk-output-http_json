@@ -5,15 +5,12 @@ com.fasterxml.jackson.core:jackson-annotations:2.12.5
 com.fasterxml.jackson.core:jackson-core:2.12.5
 com.fasterxml.jackson.core:jackson-databind:2.12.5
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.12.5
-commons-beanutils:commons-beanutils-core:1.8.3
 javax.annotation:javax.annotation-api:1.2
 javax.inject:javax.inject:1
-javax.validation:validation-api:1.1.0.Final
+javax.validation:validation-api:2.0.1.Final
 javax.ws.rs:javax.ws.rs-api:2.0.1
 net.thisptr:jackson-jq:1.0.0-preview.20210928
-org.apache.bval:bval-core:0.5
-org.apache.bval:bval-jsr303:0.5
-org.apache.commons:commons-lang3:3.1
+org.apache.bval:bval-jsr:2.0.5
 org.embulk:embulk-base-restclient:0.10.1
 org.embulk:embulk-util-config:0.3.0
 org.embulk:embulk-util-json:0.1.1

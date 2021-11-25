@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 
 public class HttpJsonOutputPluginDelegate
         implements RestClientOutputPluginDelegate<HttpJsonOutputPluginDelegate.PluginTask> {
+    @Deprecated
     public interface PluginTask extends RestClientOutputTaskBase {
         @Config("scheme")
         @ConfigDefault("\"https\"")
@@ -70,10 +71,12 @@ public class HttpJsonOutputPluginDelegate
         @ConfigDefault("{}")
         public List<Map<String, String>> getHeaders();
 
+        @Deprecated
         @Config("request")
         @ConfigDefault("{}")
         public Request getRequest();
 
+        @Deprecated
         @Config("response")
         @ConfigDefault("{}")
         public Response getResponse();
@@ -107,6 +110,7 @@ public class HttpJsonOutputPluginDelegate
         public void setEndpoint(String endpoint);
     }
 
+    @Deprecated
     public interface Request extends Task {
         @Config("method")
         @ConfigDefault("\"POST\"")
@@ -125,6 +129,7 @@ public class HttpJsonOutputPluginDelegate
         public BufferedBody getBufferedBody();
     }
 
+    @Deprecated
     public interface BufferedBody extends Task {
         @Config("buffer_size")
         @ConfigDefault("100")
@@ -135,6 +140,7 @@ public class HttpJsonOutputPluginDelegate
         public Optional<String> getRootPointer();
     }
 
+    @Deprecated
     public interface Response extends Task {
         @Config("success_condition")
         @ConfigDefault("null")
@@ -145,6 +151,7 @@ public class HttpJsonOutputPluginDelegate
         public Optional<Condition> getRetryCondition();
     }
 
+    @Deprecated
     public interface Condition extends Task {
         @Config("status_codes")
         @ConfigDefault("null")
