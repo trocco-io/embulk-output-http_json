@@ -11,7 +11,7 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
-import org.apache.bval.jsr.ApacheValidationProvider;
+import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.embulk.base.restclient.RestClientOutputPluginBase;
 import org.embulk.base.restclient.RestClientOutputTaskBase;
 import org.embulk.util.config.Config;

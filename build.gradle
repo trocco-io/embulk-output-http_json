@@ -32,7 +32,7 @@ dependencies {
     compile "org.embulk:embulk-util-json:0.1.1"
     compile "org.embulk:embulk-util-timestamp:0.2.1"
     compile "javax.validation:validation-api:2.0.1.Final"
-    compile "org.apache.bval:bval-jsr:2.0.5"
+    compile "org.apache.bval:bval-jsr303:0.5"
 
 
     compile "org.embulk:embulk-base-restclient:0.10.1"
