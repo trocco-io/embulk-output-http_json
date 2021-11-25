@@ -1,16 +1,13 @@
 package org.embulk.output.http_json;
 
-import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Client;
@@ -19,8 +16,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import net.thisptr.jackson.jq.BuiltinFunctionLoader;
+import net.thisptr.jackson.jq.JsonQuery;
+import net.thisptr.jackson.jq.Scope;
+import net.thisptr.jackson.jq.Versions;
+import net.thisptr.jackson.jq.exception.JsonQueryException;
+import net.thisptr.jackson.jq.module.loaders.BuiltinModuleLoader;
 import org.embulk.base.restclient.RestClientOutputPluginDelegate;
-import org.embulk.base.restclient.RestClientOutputTaskBase;
 import org.embulk.base.restclient.ServiceRequestMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceRequestMapper;
 import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
@@ -30,146 +33,32 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
+import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
 import org.embulk.output.http_json.helpers.JacksonRequestRecordBuffer;
-import org.embulk.output.http_json.units.HttpMethod;
-import org.embulk.output.http_json.units.HttpScheme;
-import org.embulk.output.http_json.units.RequestMode;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
-import org.embulk.util.config.Config;
-import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.config.ConfigMapperFactory;
-import org.embulk.util.config.Task;
 import org.embulk.util.retryhelper.jaxrs.JAXRSClientCreator;
+import org.embulk.util.retryhelper.jaxrs.JAXRSResponseReader;
 import org.embulk.util.retryhelper.jaxrs.JAXRSRetryHelper;
 import org.embulk.util.retryhelper.jaxrs.JAXRSSingleRequester;
-import org.embulk.util.retryhelper.jaxrs.StringJAXRSResponseEntityReader;
 import org.embulk.util.timestamp.TimestampFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpJsonOutputPluginDelegate
-        implements RestClientOutputPluginDelegate<HttpJsonOutputPluginDelegate.PluginTask> {
-    @Deprecated
-    public interface PluginTask extends RestClientOutputTaskBase {
-        @Config("scheme")
-        @ConfigDefault("\"https\"")
-        public HttpScheme getScheme();
-
-        @Config("host")
-        public String getHost();
-
-        @Config("port")
-        @ConfigDefault("null")
-        public Optional<Integer> getPort();
-
-        @Config("path")
-        @ConfigDefault("null")
-        public Optional<String> getPath();
-
-        @Config("headers")
-        @ConfigDefault("{}")
-        public List<Map<String, String>> getHeaders();
-
-        @Deprecated
-        @Config("request")
-        @ConfigDefault("{}")
-        public Request getRequest();
-
-        @Deprecated
-        @Config("response")
-        @ConfigDefault("{}")
-        public Response getResponse();
-
-        @Config("maximum_retries")
-        @ConfigDefault("7")
-        public int getMaximumRetries();
-
-        @Config("initial_retry_interval_millis")
-        @ConfigDefault("1000")
-        public int getInitialRetryIntervalMillis();
-
-        @Config("maximum_retry_interval_millis")
-        @ConfigDefault("60000")
-        public int getMaximumRetryIntervalMillis();
-
-        @Config("default_timezone")
-        @ConfigDefault("\"UTC\"")
-        public String getDefaultTimeZoneId();
-
-        @Config("default_timestamp_format")
-        @ConfigDefault("\"%Y-%m-%d %H:%M:%S.%N %z\"")
-        public String getDefaultTimestampFormat();
-
-        @Config("default_date")
-        @ConfigDefault("\"1970-01-01\"")
-        public String getDefaultDate();
-
-        public String getEndpoint();
-
-        public void setEndpoint(String endpoint);
-    }
-
-    @Deprecated
-    public interface Request extends Task {
-        @Config("method")
-        @ConfigDefault("\"POST\"")
-        public HttpMethod getMethod();
-
-        @Config("mode")
-        @ConfigDefault("\"buffered\"")
-        public RequestMode getMode();
-
-        @Config("fill_json_null_for_embulk_null")
-        @ConfigDefault("false")
-        public Boolean getFillJsonNullForEmbulkNull();
-
-        @Config("buffered_body")
-        @ConfigDefault("{}")
-        public BufferedBody getBufferedBody();
-    }
-
-    @Deprecated
-    public interface BufferedBody extends Task {
-        @Config("buffer_size")
-        @ConfigDefault("100")
-        public Integer getBufferSize();
-
-        @Config("root_pointer")
-        @ConfigDefault("null")
-        public Optional<String> getRootPointer();
-    }
-
-    @Deprecated
-    public interface Response extends Task {
-        @Config("success_condition")
-        @ConfigDefault("null")
-        public Optional<Condition> getSuccessCondition();
-
-        @Config("retry_condition")
-        @ConfigDefault("null")
-        public Optional<Condition> getRetryCondition();
-    }
-
-    @Deprecated
-    public interface Condition extends Task {
-        @Config("status_codes")
-        @ConfigDefault("null")
-        public Optional<List<Integer>> getStatusCodes();
-
-        @Config("messages")
-        @ConfigDefault("null")
-        public Optional<List<String>> getMessages();
-
-        @Config("message_pointer")
-        @ConfigDefault("/message")
-        public String getMessagePointer();
-    }
+        implements RestClientOutputPluginDelegate<HttpJsonOutputPlugin.PluginTask> {
 
     private static final Logger logger =
             LoggerFactory.getLogger(HttpJsonOutputPluginDelegate.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String BUFFER_ATTRIBUTE_KEY = "buf";
+    private static final Scope JQ_SCOPE = Scope.newEmptyScope();
+
+    static {
+        BuiltinFunctionLoader.getInstance().loadFunctions(Versions.JQ_1_6, JQ_SCOPE);
+        JQ_SCOPE.setModuleLoader(BuiltinModuleLoader.getInstance());
+    }
 
     @SuppressWarnings("unused")
     private final ConfigMapperFactory configMapperFactory;
@@ -180,7 +69,17 @@ public class HttpJsonOutputPluginDelegate
 
     @Override
     public void validateOutputTask(PluginTask task, Schema embulkSchema, int taskCount) {
-        task.setEndpoint(buildEndpoint(task));
+        validateJsonQuery("transformer_jq", task.getTransformerJq());
+        validateJsonQuery("retry_condition_jq", task.getRetryConditionJq());
+        validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());
+    }
+
+    private void validateJsonQuery(String name, String jq) {
+        try {
+            JsonQuery.compile(jq, Versions.JQ_1_6);
+        } catch (JsonQueryException e) {
+            throw new ConfigException(String.format("'%s' filter is invalid.", name), e);
+        }
     }
 
     @Override
@@ -192,8 +91,7 @@ public class HttpJsonOutputPluginDelegate
                         .build();
         return JacksonServiceRequestMapper.builder()
                 .add(
-                        new JacksonAllInObjectScope(
-                                formatter, task.getRequest().getFillJsonNullForEmbulkNull()),
+                        new JacksonAllInObjectScope(formatter, task.getFillJsonNullForEmbulkNull()),
                         new JacksonTopLevelValueLocator(BUFFER_ATTRIBUTE_KEY))
                 .build();
     }
@@ -202,25 +100,14 @@ public class HttpJsonOutputPluginDelegate
     public RecordBuffer buildRecordBuffer(PluginTask task, Schema schema, int taskIndex) {
         return new JacksonRequestRecordBuffer(
                 "responses",
-                (records) -> {
-                    switch (task.getRequest().getMode()) {
-                        case BUFFERED:
-                            return eachSlice(
-                                    records.map(r -> r.get(BUFFER_ATTRIBUTE_KEY))
-                                            .collect(Collectors.toList()),
-                                    task.getRequest().getBufferedBody().getBufferSize(),
-                                    slicedRecords ->
-                                            requestWithRetry(
-                                                    task, buildBufferedBody(task, slicedRecords)));
-                        case DIRECT:
-                            return records.map(r -> r.get(BUFFER_ATTRIBUTE_KEY))
-                                    .map(json -> requestWithRetry(task, json))
-                                    .collect(Collectors.toList());
-                        default:
-                            throw new ConfigException(
-                                    "Unknown request mode: " + task.getRequest().getMode());
-                    }
-                });
+                (records) ->
+                        eachSlice(
+                                records.map(r -> r.get(BUFFER_ATTRIBUTE_KEY))
+                                        .collect(Collectors.toList()),
+                                task.getBufferSize(),
+                                slicedRecords ->
+                                        requestWithRetry(
+                                                task, buildBufferedBody(task, slicedRecords))));
     }
 
     @Override
@@ -242,39 +129,21 @@ public class HttpJsonOutputPluginDelegate
     private JsonNode buildBufferedBody(PluginTask task, List<JsonNode> records) {
         final ArrayNode an = OBJECT_MAPPER.createArrayNode();
         records.forEach(an::add);
-        if (!task.getRequest().getBufferedBody().getRootPointer().isPresent()) {
-            return an;
-        }
-        final ObjectNode root = OBJECT_MAPPER.createObjectNode();
-        final JsonPointer jp =
-                JsonPointer.compile(task.getRequest().getBufferedBody().getRootPointer().get());
-        createNestedMissingNodes(root, jp, an);
-        return root;
-    }
 
-    private <NodeType extends JsonNode> void createNestedMissingNodes(
-            JsonNode json, JsonPointer jp, JsonNode leafValue) {
-        final JsonNode parent = json.at(jp.head());
-        if (parent.isArray()) {
+        final List<JsonNode> out = new ArrayList<>();
+        try {
+            JsonQuery jq = JsonQuery.compile(task.getTransformerJq(), Versions.JQ_1_6);
+            jq.apply(JQ_SCOPE, an, out::add);
+        } catch (JsonQueryException e) {
+            throw new DataException("Failed to apply 'transformer_jq'.", e);
+        }
+        if (out.size() != 1) {
             throw new DataException(
                     String.format(
-                            "Unsupported data type of the value specified by Json Pointer: %s",
-                            jp.head().toString()));
+                            "'transformer_jq' must return a single value. But %d values are returned.",
+                            out.size()));
         }
-        if (parent.isMissingNode()) {
-            createNestedMissingNodes(json, jp.head(), OBJECT_MAPPER.createObjectNode());
-        }
-        ((ObjectNode) parent).set(jp.last().getMatchingProperty(), leafValue);
-    }
-
-    private String requestWithRetry(final PluginTask task, final JsonNode json) {
-        return tryWithJAXRSRetryHelper(
-                task,
-                retryHelper -> {
-                    return retryHelper.requestWithRetry(
-                            new StringJAXRSResponseEntityReader(),
-                            newJAXRSSingleRequester(task, json));
-                });
+        return out.get(0);
     }
 
     private JAXRSSingleRequester newJAXRSSingleRequester(PluginTask task, JsonNode json) {
@@ -287,13 +156,48 @@ public class HttpJsonOutputPluginDelegate
 
             @Override
             protected boolean isResponseStatusToRetry(javax.ws.rs.core.Response response) {
-                if (task.getResponse().getRetryCondition().isPresent()) {
-                    return isMatchedResponse(
-                            task.getResponse().getRetryCondition().get(), response);
-                }
-                return false;
+                return isMatchedResponse(
+                        "retry_condition_jq",
+                        task.getRetryConditionJq(),
+                        transformResponseToObjectNode(response));
             }
         };
+    }
+
+    private ObjectNode transformResponseToObjectNode(javax.ws.rs.core.Response response) {
+        ObjectNode responseJson = OBJECT_MAPPER.createObjectNode();
+        responseJson.put("status_code", response.getStatus());
+        responseJson.put("status_code_class", (response.getStatus() / 100) * 100);
+        String json = response.readEntity(String.class);
+        try {
+            responseJson.set("response_body", OBJECT_MAPPER.readValue(json, ObjectNode.class));
+        } catch (JsonProcessingException e) {
+            throw new DataException("Failed to parse response body.", e);
+        }
+        return responseJson;
+    }
+
+    private Boolean isMatchedResponse(String jqName, String jq, ObjectNode responseJson) {
+        final List<JsonNode> out = new ArrayList<>();
+        try {
+            JsonQuery.compile(jq, Versions.JQ_1_6).apply(JQ_SCOPE, responseJson, out::add);
+        } catch (JsonQueryException e) {
+            throw new DataException("Failed to apply 'retry_condition_jq'.", e);
+        }
+        if (out.size() != 1) {
+            throw new DataException(
+                    String.format(
+                            "'%s' must return a single value. But %d values are returned.",
+                            jqName, out.size()));
+        }
+        JsonNode maybeBoolean = out.get(0);
+        if (!maybeBoolean.isBoolean()) {
+            throw new DataException(
+                    String.format(
+                            "'%s' must return a boolean value. But %s is returned.",
+                            jqName, maybeBoolean.toString()));
+        }
+        return maybeBoolean.asBoolean();
     }
 
     private javax.ws.rs.core.Response buildRequest(
@@ -302,30 +206,10 @@ public class HttpJsonOutputPluginDelegate
         MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
         task.getHeaders().forEach(h -> h.forEach((k, v) -> headers.add(k, v)));
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        return client.target(task.getEndpoint())
+        return client.target(buildEndpoint(task))
                 .request()
                 .headers(headers)
-                .method(task.getRequest().getMethod().name(), entity);
-    }
-
-    private Boolean isMatchedResponse(Condition cond, javax.ws.rs.core.Response response) {
-        if (cond.getStatusCodes().isPresent()) {
-            if (!cond.getStatusCodes().get().contains(response.getStatus())) {
-                return false;
-            }
-        }
-        if (cond.getMessages().isPresent()) {
-            ObjectNode oj;
-            try {
-                oj = OBJECT_MAPPER.readValue(response.readEntity(String.class), ObjectNode.class);
-            } catch (IOException e) {
-                throw new DataException(e);
-            }
-            if (!cond.getMessages().get().contains(oj.get(cond.getMessagePointer()).asText())) {
-                return false;
-            }
-        }
-        return true;
+                .method(task.getMethod(), entity);
     }
 
     private <T> T tryWithJAXRSRetryHelper(PluginTask task, Function<JAXRSRetryHelper, T> f) {
@@ -342,6 +226,36 @@ public class HttpJsonOutputPluginDelegate
                         })) {
             return f.apply(retryHelper);
         }
+    }
+
+    private ObjectNode requestWithRetry(final PluginTask task, final JsonNode json) {
+        return tryWithJAXRSRetryHelper(
+                task,
+                retryHelper -> {
+                    return retryHelper.requestWithRetry(
+                            newJAXRSResponseReader(task), newJAXRSSingleRequester(task, json));
+                });
+    }
+
+    private JAXRSResponseReader<ObjectNode> newJAXRSResponseReader(PluginTask task) {
+        return new JAXRSResponseReader<ObjectNode>() {
+
+            private ObjectNode acceptAndReadOrThrow(javax.ws.rs.core.Response response) {
+                ObjectNode responseJson = transformResponseToObjectNode(response);
+                if (!isMatchedResponse(
+                        "success_condition_jq", task.getSuccessConditionJq(), responseJson)) {
+                    // TODO: Clone response to avoid to read the closed stream.
+                    // TODO: Make it retryable.
+                    throw new javax.ws.rs.WebApplicationException(response);
+                }
+                return responseJson;
+            }
+
+            @Override
+            public ObjectNode readResponse(Response response) throws Exception {
+                return acceptAndReadOrThrow(response);
+            }
+        };
     }
 
     private String buildEndpoint(PluginTask task) {

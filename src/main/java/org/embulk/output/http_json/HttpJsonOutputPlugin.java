@@ -19,7 +19,7 @@ import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.config.ConfigMapperFactory;
 
 public class HttpJsonOutputPlugin
-        extends RestClientOutputPluginBase<HttpJsonOutputPluginDelegate.PluginTask> {
+        extends RestClientOutputPluginBase<HttpJsonOutputPlugin.PluginTask> {
     private static final Validator VALIDATOR =
             Validation.byProvider(ApacheValidationProvider.class)
                     .configure()
@@ -31,7 +31,7 @@ public class HttpJsonOutputPlugin
     public HttpJsonOutputPlugin() {
         super(
                 CONFIG_MAPPER_FACTORY,
-                HttpJsonOutputPluginDelegate.PluginTask.class,
+                HttpJsonOutputPlugin.PluginTask.class,
                 new HttpJsonOutputPluginDelegate(CONFIG_MAPPER_FACTORY));
     }
 
@@ -85,7 +85,7 @@ public class HttpJsonOutputPlugin
         public String getRetryConditionJq();
 
         @Config("success_condition_jq")
-        @ConfigDefault("\".status_code / 100 == 2\"")
+        @ConfigDefault("\".status_code_class == 200\"")
         @NotBlank
         public String getSuccessConditionJq();
 
