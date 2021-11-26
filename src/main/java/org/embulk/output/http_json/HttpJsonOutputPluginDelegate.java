@@ -1,10 +1,10 @@
 package org.embulk.output.http_json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,12 +17,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import net.thisptr.jackson.jq.BuiltinFunctionLoader;
-import net.thisptr.jackson.jq.JsonQuery;
-import net.thisptr.jackson.jq.Scope;
-import net.thisptr.jackson.jq.Versions;
-import net.thisptr.jackson.jq.exception.JsonQueryException;
-import net.thisptr.jackson.jq.module.loaders.BuiltinModuleLoader;
 import org.embulk.base.restclient.RestClientOutputPluginDelegate;
 import org.embulk.base.restclient.ServiceRequestMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceRequestMapper;
@@ -35,6 +29,9 @@ import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
 import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
 import org.embulk.output.http_json.helpers.JacksonRequestRecordBuffer;
+import org.embulk.output.http_json.jq.IllegalJQProcessingException;
+import org.embulk.output.http_json.jq.InvalidJQFilterException;
+import org.embulk.output.http_json.jq.JQ;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.ConfigMapperFactory;
@@ -53,12 +50,7 @@ public class HttpJsonOutputPluginDelegate
             LoggerFactory.getLogger(HttpJsonOutputPluginDelegate.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String BUFFER_ATTRIBUTE_KEY = "buf";
-    private static final Scope JQ_SCOPE = Scope.newEmptyScope();
-
-    static {
-        BuiltinFunctionLoader.getInstance().loadFunctions(Versions.JQ_1_6, JQ_SCOPE);
-        JQ_SCOPE.setModuleLoader(BuiltinModuleLoader.getInstance());
-    }
+    private static final JQ jq = new JQ();
 
     @SuppressWarnings("unused")
     private final ConfigMapperFactory configMapperFactory;
@@ -74,10 +66,10 @@ public class HttpJsonOutputPluginDelegate
         validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());
     }
 
-    private void validateJsonQuery(String name, String jq) {
+    private void validateJsonQuery(String name, String jqFilter) {
         try {
-            JsonQuery.compile(jq, Versions.JQ_1_6);
-        } catch (JsonQueryException e) {
+            jq.validateFilter(jqFilter);
+        } catch (InvalidJQFilterException e) {
             throw new ConfigException(String.format("'%s' filter is invalid.", name), e);
         }
     }
@@ -130,11 +122,10 @@ public class HttpJsonOutputPluginDelegate
         final ArrayNode an = OBJECT_MAPPER.createArrayNode();
         records.forEach(an::add);
 
-        final List<JsonNode> out = new ArrayList<>();
+        final List<JsonNode> out;
         try {
-            JsonQuery jq = JsonQuery.compile(task.getTransformerJq(), Versions.JQ_1_6);
-            jq.apply(JQ_SCOPE, an, out::add);
-        } catch (JsonQueryException e) {
+            out = jq.jq(task.getTransformerJq(), an);
+        } catch (IllegalJQProcessingException e) {
             throw new DataException("Failed to apply 'transformer_jq'.", e);
         }
         if (out.size() != 1) {
@@ -171,17 +162,17 @@ public class HttpJsonOutputPluginDelegate
         String json = response.readEntity(String.class);
         try {
             responseJson.set("response_body", OBJECT_MAPPER.readValue(json, ObjectNode.class));
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             throw new DataException("Failed to parse response body.", e);
         }
         return responseJson;
     }
 
-    private Boolean isMatchedResponse(String jqName, String jq, ObjectNode responseJson) {
-        final List<JsonNode> out = new ArrayList<>();
+    private Boolean isMatchedResponse(String jqName, String jqFilter, ObjectNode responseJson) {
+        final List<JsonNode> out;
         try {
-            JsonQuery.compile(jq, Versions.JQ_1_6).apply(JQ_SCOPE, responseJson, out::add);
-        } catch (JsonQueryException e) {
+            out = jq.jq(jqFilter, responseJson);
+        } catch (IllegalJQProcessingException e) {
             throw new DataException("Failed to apply 'retry_condition_jq'.", e);
         }
         if (out.size() != 1) {
