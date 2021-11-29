@@ -27,8 +27,8 @@ import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
 import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
-import org.embulk.output.http_json.helpers.JacksonAllInObjectScope;
 import org.embulk.output.http_json.helpers.JacksonRequestRecordBuffer;
+import org.embulk.output.http_json.jackson.scope.JacksonAllInObjectScope;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.output.http_json.jq.JQ;
@@ -76,14 +76,10 @@ public class HttpJsonOutputPluginDelegate
 
     @Override
     public ServiceRequestMapper<? extends ValueLocator> buildServiceRequestMapper(PluginTask task) {
-        final TimestampFormatter formatter =
-                TimestampFormatter.builder(task.getDefaultTimestampFormat(), true)
-                        .setDefaultZoneFromString(task.getDefaultTimeZoneId())
-                        .setDefaultDateFromString(task.getDefaultDate())
-                        .build();
         return JacksonServiceRequestMapper.builder()
                 .add(
-                        new JacksonAllInObjectScope(formatter, task.getFillJsonNullForEmbulkNull()),
+                        new JacksonAllInObjectScope(
+                                buildTimestampFormatter(task), task.getFillJsonNullForEmbulkNull()),
                         new JacksonTopLevelValueLocator(BUFFER_ATTRIBUTE_KEY))
                 .build();
     }
@@ -107,6 +103,13 @@ public class HttpJsonOutputPluginDelegate
             PluginTask task, Schema schema, int taskCount, List<TaskReport> taskReports) {
         taskReports.forEach(report -> logger.info(report.toString()));
         return configMapperFactory.newConfigDiff();
+    }
+
+    private TimestampFormatter buildTimestampFormatter(PluginTask task) {
+        return TimestampFormatter.builder(task.getDefaultTimestampFormat(), true)
+                .setDefaultZoneFromString(task.getDefaultTimeZoneId())
+                .setDefaultDateFromString(task.getDefaultDate())
+                .build();
     }
 
     private <A, R> List<R> eachSlice(List<A> list, int sliceSize, Function<List<A>, R> function) {
