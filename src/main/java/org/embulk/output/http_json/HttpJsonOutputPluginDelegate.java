@@ -27,7 +27,7 @@ import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
 import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
-import org.embulk.output.http_json.helpers.JacksonRequestRecordBuffer;
+import org.embulk.output.http_json.jackson.JacksonRequestRecordBuffer;
 import org.embulk.output.http_json.jackson.scope.JacksonAllInObjectScope;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;

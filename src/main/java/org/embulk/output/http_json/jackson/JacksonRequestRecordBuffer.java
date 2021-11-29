@@ -1,4 +1,4 @@
-package org.embulk.output.http_json.helpers;
+package org.embulk.output.http_json.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
