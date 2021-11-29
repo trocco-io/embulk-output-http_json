@@ -11,13 +11,13 @@ import java.util.stream.Stream;
 import org.embulk.base.restclient.jackson.JacksonTaskReportRecordBuffer;
 import org.embulk.config.TaskReport;
 
-public class JacksonRequestRecordBuffer extends JacksonTaskReportRecordBuffer {
+public class JacksonCommitWithFlushRecordBuffer extends JacksonTaskReportRecordBuffer {
 
     private static final ObjectMapper om = new ObjectMapper();
     private final String taskReportKeyName;
     private final Function<Stream<ObjectNode>, List<ObjectNode>> requestResponseHandler;
 
-    public JacksonRequestRecordBuffer(
+    public JacksonCommitWithFlushRecordBuffer(
             String taskReportKeyName,
             Function<Stream<ObjectNode>, List<ObjectNode>> requestResponseHandler) {
         super(taskReportKeyName);

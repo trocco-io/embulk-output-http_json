@@ -27,7 +27,7 @@ import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
 import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
-import org.embulk.output.http_json.jackson.JacksonRequestRecordBuffer;
+import org.embulk.output.http_json.jackson.JacksonCommitWithFlushRecordBuffer;
 import org.embulk.output.http_json.jackson.scope.JacksonAllInObjectScope;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
@@ -86,16 +86,19 @@ public class HttpJsonOutputPluginDelegate
 
     @Override
     public RecordBuffer buildRecordBuffer(PluginTask task, Schema schema, int taskIndex) {
-        return new JacksonRequestRecordBuffer(
+        return new JacksonCommitWithFlushRecordBuffer(
                 "responses",
-                (records) ->
-                        eachSlice(
-                                records.map(r -> r.get(BUFFER_ATTRIBUTE_KEY))
-                                        .collect(Collectors.toList()),
-                                task.getBufferSize(),
-                                slicedRecords ->
-                                        requestWithRetry(
-                                                task, buildBufferedBody(task, slicedRecords))));
+                (records) -> {
+                    final List<JsonNode> actualRecords =
+                            records.map(r -> r.get(BUFFER_ATTRIBUTE_KEY))
+                                    .collect(Collectors.toList());
+                    final Function<List<JsonNode>, ObjectNode> bufferedRecordHandler =
+                            (bufferedRecords) -> {
+                                return requestWithRetry(
+                                        task, buildBufferedBody(task, bufferedRecords));
+                            };
+                    return eachSlice(actualRecords, task.getBufferSize(), bufferedRecordHandler);
+                });
     }
 
     @Override
