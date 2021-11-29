@@ -1,4 +1,4 @@
-package org.embulk.output.http_json.jackson;
+package org.embulk.output.http_json.helpers;
 
 // NOTE: This file is a copy of the code in the link below, which allows you to handle arrays when
 //       parsing JSON.
@@ -112,7 +112,7 @@ public class JacksonAllInObjectScope extends JacksonObjectScopeBase {
                                     } catch (IOException e) {
                                         throw new DataException("Failed to parse json value.", e);
                                     }
-                                } else {
+                                } else if (fillsJsonNullForEmbulkNull) {
                                     resultObject.putNull(column.getName());
                                 }
                             }
