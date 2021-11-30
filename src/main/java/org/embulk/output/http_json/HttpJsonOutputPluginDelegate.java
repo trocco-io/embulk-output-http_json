@@ -46,7 +46,6 @@ public class HttpJsonOutputPluginDelegate
     private static final String BUFFER_ATTRIBUTE_KEY = "buf";
     private static final JQ jq = new JQ();
 
-    @SuppressWarnings("unused")
     private final ConfigMapperFactory configMapperFactory;
 
     public HttpJsonOutputPluginDelegate(ConfigMapperFactory configMapperFactory) {
