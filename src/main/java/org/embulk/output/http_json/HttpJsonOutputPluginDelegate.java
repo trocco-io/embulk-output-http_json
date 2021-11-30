@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.client.ClientBuilder;
 import org.embulk.base.restclient.RestClientOutputPluginDelegate;
 import org.embulk.base.restclient.ServiceRequestMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceRequestMapper;
@@ -22,7 +22,8 @@ import org.embulk.config.TaskReport;
 import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
 import org.embulk.output.http_json.jackson.JacksonCommitWithFlushRecordBuffer;
 import org.embulk.output.http_json.jackson.scope.JacksonAllInObjectScope;
-import org.embulk.output.http_json.jaxrs.JAXRSSingleRequesterBuilder;
+import org.embulk.output.http_json.jaxrs.JAXRSJsonNodeSingleRequester;
+import org.embulk.output.http_json.jaxrs.JAXRSObjectNodeResponseEntityReader;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.output.http_json.jq.JQ;
@@ -30,7 +31,6 @@ import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.ConfigMapperFactory;
 import org.embulk.util.retryhelper.jaxrs.JAXRSRetryHelper;
-import org.embulk.util.retryhelper.jaxrs.StringJAXRSResponseEntityReader;
 import org.embulk.util.timestamp.TimestampFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,14 +85,8 @@ public class HttpJsonOutputPluginDelegate
                                     .collect(Collectors.toList());
                     final Function<List<JsonNode>, ObjectNode> bufferedRecordHandler =
                             (bufferedRecords) -> {
-                                try {
-                                    return OBJECT_MAPPER.readValue(
-                                            requestWithRetry(
-                                                    task, buildBufferedBody(task, bufferedRecords)),
-                                            ObjectNode.class);
-                                } catch (IOException e) {
-                                    throw new DataException(e);
-                                }
+                                return requestWithRetry(
+                                        task, buildBufferedBody(task, bufferedRecords));
                             };
                     return eachSlice(actualRecords, task.getBufferSize(), bufferedRecordHandler);
                 });
@@ -138,21 +132,20 @@ public class HttpJsonOutputPluginDelegate
                         task.getMaximumRetries(),
                         task.getInitialRetryIntervalMillis(),
                         task.getMaximumRetryIntervalMillis(),
-                        () -> javax.ws.rs.client.ClientBuilder.newBuilder().build())) {
+                        () -> ClientBuilder.newBuilder().build())) {
             return f.apply(retryHelper);
         }
     }
 
-    private String requestWithRetry(final PluginTask task, final JsonNode json) {
+    private ObjectNode requestWithRetry(final PluginTask task, final JsonNode json) {
         return tryWithJAXRSRetryHelper(
                 task,
-                retryHelper -> {
-                    return retryHelper.requestWithRetry(
-                            new StringJAXRSResponseEntityReader(),
-                            JAXRSSingleRequesterBuilder.builder()
-                                    .task(task)
-                                    .requestBody(json)
-                                    .build());
-                });
+                retryHelper ->
+                        retryHelper.requestWithRetry(
+                                JAXRSObjectNodeResponseEntityReader.newInstance(),
+                                JAXRSJsonNodeSingleRequester.builder()
+                                        .task(task)
+                                        .requestBody(json)
+                                        .build()));
     }
 }

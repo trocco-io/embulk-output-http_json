@@ -1,5 +1,8 @@
 package org.embulk.output.http_json.jaxrs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.Date;
@@ -16,12 +19,14 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
-public class JAXRSReusableStringResponse extends Response {
+public class JAXRSEntityRecycleResponse extends Response {
 
+    private final ObjectMapper mapper;
     private final Response delegate;
     private final Optional<String> body;
 
-    public JAXRSReusableStringResponse(Response delegate) {
+    private JAXRSEntityRecycleResponse(Response delegate) {
+        this.mapper = new ObjectMapper();
         this.delegate = delegate;
         if (delegate.hasEntity()) {
             this.body = Optional.of(delegate.readEntity(String.class));
@@ -30,14 +35,8 @@ public class JAXRSReusableStringResponse extends Response {
         }
     }
 
-    @Override
-    public int getStatus() {
-        return delegate.getStatus();
-    }
-
-    @Override
-    public StatusType getStatusInfo() {
-        return delegate.getStatusInfo();
+    public static JAXRSEntityRecycleResponse of(Response delegate) {
+        return new JAXRSEntityRecycleResponse(delegate);
     }
 
     @Override
@@ -48,19 +47,23 @@ public class JAXRSReusableStringResponse extends Response {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T readEntity(Class<T> entityType) {
-        if (!entityType.equals(String.class)) {
-            throw new IllegalArgumentException("Unsupported entity type: " + entityType);
+        if (entityType.equals(String.class)) {
+            return (T) getEntity();
         }
-        return (T) getEntity();
+        if (entityType.equals(ObjectNode.class)) {
+            try {
+                return (T) mapper.readTree((String) getEntity());
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        throw new IllegalArgumentException("Unsupported entity type: " + entityType);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T readEntity(GenericType<T> entityType) {
-        if (!entityType.getRawType().equals(String.class)) {
-            throw new IllegalArgumentException("Unsupported entity type: " + entityType);
-        }
-        return (T) getEntity();
+        return readEntity((Class<T>) entityType.getRawType());
     }
 
     @Override
@@ -76,6 +79,18 @@ public class JAXRSReusableStringResponse extends Response {
     @Override
     public boolean hasEntity() {
         return body.isPresent();
+    }
+
+    /* NOTE: The below methods are just delegated methods. */
+
+    @Override
+    public int getStatus() {
+        return delegate.getStatus();
+    }
+
+    @Override
+    public StatusType getStatusInfo() {
+        return delegate.getStatusInfo();
     }
 
     @Override
