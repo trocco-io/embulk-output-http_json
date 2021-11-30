@@ -27,6 +27,7 @@ import org.embulk.output.http_json.jaxrs.JAXRSObjectNodeResponseEntityReader;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.output.http_json.jq.JQ;
+import org.embulk.output.http_json.validator.BeanValidator;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.ConfigMapperFactory;
@@ -52,6 +53,7 @@ public class HttpJsonOutputPluginDelegate
 
     @Override
     public void validateOutputTask(PluginTask task, Schema embulkSchema, int taskCount) {
+        BeanValidator.validate(task);
         validateJsonQuery("transformer_jq", task.getTransformerJq());
         validateJsonQuery("retryable_condition_jq", task.getRetryableConditionJq());
         validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());

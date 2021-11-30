@@ -31,9 +31,8 @@ dependencies {
     compile "org.embulk:embulk-util-config:0.3.0"
     compile "org.embulk:embulk-util-json:0.1.1"
     compile "org.embulk:embulk-util-timestamp:0.2.1"
-    compile "javax.validation:validation-api:2.0.1.Final"
-    compile "org.apache.bval:bval-jsr303:0.5"
-
+    compile "org.hibernate:hibernate-validator:7.0.1.Final"
+    compile "org.glassfish:jakarta.el:4.0.2"
 
     compile "org.embulk:embulk-base-restclient:0.10.1"
     compile("org.embulk:embulk-util-retryhelper-jaxrs:0.8.1") {

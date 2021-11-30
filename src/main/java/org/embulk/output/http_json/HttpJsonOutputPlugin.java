@@ -1,17 +1,16 @@
 package org.embulk.output.http_json;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
-import javax.validation.constraints.Size;
-import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.embulk.base.restclient.RestClientOutputPluginBase;
 import org.embulk.base.restclient.RestClientOutputTaskBase;
 import org.embulk.util.config.Config;
@@ -20,13 +19,8 @@ import org.embulk.util.config.ConfigMapperFactory;
 
 public class HttpJsonOutputPlugin
         extends RestClientOutputPluginBase<HttpJsonOutputPlugin.PluginTask> {
-    private static final Validator VALIDATOR =
-            Validation.byProvider(ApacheValidationProvider.class)
-                    .configure()
-                    .buildValidatorFactory()
-                    .getValidator();
     private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY =
-            ConfigMapperFactory.builder().addDefaultModules().withValidator(VALIDATOR).build();
+            ConfigMapperFactory.builder().addDefaultModules().build();
 
     public HttpJsonOutputPlugin() {
         super(
@@ -47,7 +41,7 @@ public class HttpJsonOutputPlugin
 
         @Config("port")
         @ConfigDefault("null")
-        public Optional<@Size(min = 0, max = 65535) Integer> getPort();
+        public Optional<@Min(0) @Max(65535) Integer> getPort();
 
         @Config("path")
         @ConfigDefault("null")
