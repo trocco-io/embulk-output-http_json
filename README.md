@@ -1,4 +1,5 @@
 # embulk-output-http_json
+[![main](https://github.com/trocco-io/embulk-output-http_json/actions/workflows/main.yml/badge.svg)](https://github.com/trocco-io/embulk-output-http_json/actions/workflows/main.yml)
 
 An embulk output plugin to egest records as json with [`jq`](https://github.com/eiiches/jackson-jq) via http/https.
 
