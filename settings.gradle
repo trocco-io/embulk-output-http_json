@@ -1,1 +1,3 @@
 rootProject.name = 'embulk-output-http_json'
+
+include ':shadow-jackson-jq'
