@@ -55,4 +55,26 @@ public class JQ {
         }
         return Collections.unmodifiableList(resultBuilder);
     }
+
+    public JsonNode jqSingle(String filter, JsonNode input) throws IllegalJQProcessingException {
+        final List<JsonNode> result = jq(filter, input);
+        if (result.size() != 1) {
+            throw new IllegalJQProcessingException(
+                    String.format(
+                            "The jq filter: %s must return a single value. But %d values are returned.",
+                            filter, result.size()));
+        }
+        return result.get(0);
+    }
+
+    public boolean jqBoolean(String filter, JsonNode input) throws IllegalJQProcessingException {
+        final JsonNode maybeBoolean = jqSingle(filter, input);
+        if (!maybeBoolean.isBoolean()) {
+            throw new IllegalJQProcessingException(
+                    String.format(
+                            "The jq filter: %s must return a boolean value. But %s is returned.",
+                            filter, maybeBoolean.toString()));
+        }
+        return maybeBoolean.asBoolean();
+    }
 }

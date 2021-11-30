@@ -79,11 +79,6 @@ public class HttpJsonOutputPlugin
         @NotBlank
         public String getTransformerJq();
 
-        @Config("retry_condition_jq")
-        @ConfigDefault("\"true\"")
-        @NotBlank
-        public String getRetryConditionJq();
-
         @Config("success_condition_jq")
         @ConfigDefault("\".status_code_class == 200\"")
         @NotBlank
