@@ -89,6 +89,11 @@ public class HttpJsonOutputPlugin
         @NotBlank
         public String getRetryableConditionJq();
 
+        @Config("show_request_body_on_error")
+        @ConfigDefault("true")
+        @NotNull
+        public Boolean getShowRequestBodyOnError();
+
         @Config("maximum_retries")
         @ConfigDefault("7")
         @PositiveOrZero

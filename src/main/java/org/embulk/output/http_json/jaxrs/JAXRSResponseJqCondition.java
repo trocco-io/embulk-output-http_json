@@ -25,4 +25,8 @@ public class JAXRSResponseJqCondition {
             throws InvalidJQFilterException, IOException, IllegalJQProcessingException {
         return jq.jqBoolean(jqFilter, JAXRSResponseJson.convertResponseToObjectNode(response));
     }
+
+    public String getJqFilter() {
+        return jqFilter;
+    }
 }

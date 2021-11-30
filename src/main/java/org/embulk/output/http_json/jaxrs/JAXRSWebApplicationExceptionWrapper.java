@@ -6,7 +6,9 @@ import javax.ws.rs.core.Response;
 public class JAXRSWebApplicationExceptionWrapper extends WebApplicationException {
 
     private JAXRSWebApplicationExceptionWrapper(WebApplicationException e) {
-        super(e.getMessage() + " " + e.getResponse().readEntity(String.class), e.getResponse());
+        super(
+                e.getMessage() + ", Body: " + e.getResponse().readEntity(String.class),
+                e.getResponse());
     }
 
     public static JAXRSWebApplicationExceptionWrapper wrap(WebApplicationException e) {

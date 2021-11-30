@@ -15,8 +15,13 @@ import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.spi.DataException;
 import org.embulk.util.retryhelper.jaxrs.JAXRSSingleRequester;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JAXRSJsonNodeSingleRequester extends JAXRSSingleRequester {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(JAXRSJsonNodeSingleRequester.class);
 
     public static class Builder {
         private PluginTask task;
@@ -52,6 +57,7 @@ public class JAXRSJsonNodeSingleRequester extends JAXRSSingleRequester {
     private final MultivaluedMap<String, Object> headers;
     private final JAXRSResponseJqCondition successCondition;
     private final JAXRSResponseJqCondition retryableCondition;
+    private final boolean showRequestBodyOnError;
 
     private JAXRSJsonNodeSingleRequester(Builder builder) {
         this.requestBody = builder.requestBody;
@@ -66,6 +72,7 @@ public class JAXRSJsonNodeSingleRequester extends JAXRSSingleRequester {
         } catch (InvalidJQFilterException e) {
             throw new ConfigException(e);
         }
+        this.showRequestBodyOnError = builder.task.getShowRequestBodyOnError();
     }
 
     private String buildEndpoint(PluginTask task) {
@@ -101,6 +108,12 @@ public class JAXRSJsonNodeSingleRequester extends JAXRSSingleRequester {
         // https://github.com/embulk/embulk-util-retryhelper/blob/402412d/embulk-util-retryhelper-jaxrs/src/main/java/org/embulk/util/retryhelper/jaxrs/JAXRSRetryHelper.java#L107-L109
         try {
             if (!successCondition.isSatisfied(response)) {
+                if (showRequestBodyOnError) {
+                    logger.warn(
+                            "Success condition is not satisfied. Condition jq:'{}', Request body: '{}'",
+                            successCondition.getJqFilter(),
+                            requestBody.toString());
+                }
                 throw JAXRSWebApplicationExceptionWrapper.wrap(response);
             }
         } catch (InvalidJQFilterException | IllegalJQProcessingException | IOException e) {
