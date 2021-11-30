@@ -22,8 +22,6 @@ import org.embulk.config.TaskReport;
 import org.embulk.output.http_json.HttpJsonOutputPlugin.PluginTask;
 import org.embulk.output.http_json.jackson.JacksonCommitWithFlushRecordBuffer;
 import org.embulk.output.http_json.jackson.scope.JacksonAllInObjectScope;
-import org.embulk.output.http_json.jaxrs.JAXRSRequestSuccessCondition;
-import org.embulk.output.http_json.jaxrs.JAXRSRetryHelper;
 import org.embulk.output.http_json.jaxrs.JAXRSSingleRequesterBuilder;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
@@ -31,7 +29,7 @@ import org.embulk.output.http_json.jq.JQ;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.ConfigMapperFactory;
-import org.embulk.util.retryhelper.jaxrs.JAXRSClientCreator;
+import org.embulk.util.retryhelper.jaxrs.JAXRSRetryHelper;
 import org.embulk.util.retryhelper.jaxrs.StringJAXRSResponseEntityReader;
 import org.embulk.util.timestamp.TimestampFormatter;
 import org.slf4j.Logger;
@@ -140,12 +138,7 @@ public class HttpJsonOutputPluginDelegate
                         task.getMaximumRetries(),
                         task.getInitialRetryIntervalMillis(),
                         task.getMaximumRetryIntervalMillis(),
-                        new JAXRSClientCreator() {
-                            @Override
-                            public javax.ws.rs.client.Client create() {
-                                return javax.ws.rs.client.ClientBuilder.newBuilder().build();
-                            }
-                        })) {
+                        () -> javax.ws.rs.client.ClientBuilder.newBuilder().build())) {
             return f.apply(retryHelper);
         }
     }
@@ -156,7 +149,6 @@ public class HttpJsonOutputPluginDelegate
                 retryHelper -> {
                     return retryHelper.requestWithRetry(
                             new StringJAXRSResponseEntityReader(),
-                            new JAXRSRequestSuccessCondition(task.getSuccessConditionJq()),
                             JAXRSSingleRequesterBuilder.builder()
                                     .task(task)
                                     .requestBody(json)

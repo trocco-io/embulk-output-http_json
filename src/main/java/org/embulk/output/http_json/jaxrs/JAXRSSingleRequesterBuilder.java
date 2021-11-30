@@ -40,7 +40,15 @@ public class JAXRSSingleRequesterBuilder {
             @Override
             public Response requestOnce(Client client) {
                 Response response = buildRequest(task, client, requestBody);
-                return new JAXRSReusableStringResponse(response);
+                response = new JAXRSReusableStringResponse(response);
+                // NOTE: If an exception is thrown by the exception handling in the link below, the
+                //       error message will be poor, so to avoid this, put the exception handling
+                //       here.
+                // https://github.com/embulk/embulk-util-retryhelper/blob/402412d/embulk-util-retryhelper-jaxrs/src/main/java/org/embulk/util/retryhelper/jaxrs/JAXRSRetryHelper.java#L107-L109
+                if (response.getStatus() / 100 != 2) {
+                    throw JAXRSWebApplicationExceptionWrapper.wrap(response);
+                }
+                return response;
             }
 
             @Override
