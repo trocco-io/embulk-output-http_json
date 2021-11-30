@@ -55,6 +55,7 @@ public class HttpJsonOutputPluginDelegate
     @Override
     public void validateOutputTask(PluginTask task, Schema embulkSchema, int taskCount) {
         validateJsonQuery("transformer_jq", task.getTransformerJq());
+        validateJsonQuery("retryable_condition_jq", task.getRetryableConditionJq());
         validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());
     }
 

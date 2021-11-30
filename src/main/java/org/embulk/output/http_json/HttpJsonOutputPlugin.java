@@ -84,6 +84,11 @@ public class HttpJsonOutputPlugin
         @NotBlank
         public String getSuccessConditionJq();
 
+        @Config("retryable_condition_jq")
+        @ConfigDefault("\"true\"")
+        @NotBlank
+        public String getRetryableConditionJq();
+
         @Config("maximum_retries")
         @ConfigDefault("7")
         @PositiveOrZero
