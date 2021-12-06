@@ -172,6 +172,23 @@ out:
 
 ## Development
 
+### Run an example
+
+Firstly, you need to start the mock server.
+
+```shell
+$ ./example/run-mock-server.sh
+```
+
+then, you run the example.
+
+```shell
+$ ./gradlew gem
+$ embulk run -Ibuild/gemContents/lib -X min_output_tasks=1 example/config.yml
+```
+
+The requested records are shown on the mock server console.
+
 ### Run tests
 
 ```shell
