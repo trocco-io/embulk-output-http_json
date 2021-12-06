@@ -117,8 +117,14 @@ public class JAXRSJsonNodeSingleRequester extends JAXRSSingleRequester {
                 throw JAXRSWebApplicationExceptionWrapper.wrap(response);
             }
         } catch (InvalidJQFilterException | IllegalJQProcessingException | IOException e) {
-            // TODO: Use a suitable exception class.
-            throw new DataException(e);
+            try {
+                String body = response.readEntity(String.class);
+                throw new DataException("response_body: " + body, e);
+            } catch (Exception e2) {
+                logger.debug(
+                        "Exception '{}' is thrown when reading the response.", e.getMessage(), e2);
+                throw new DataException(e);
+            }
         }
         return response;
     }
