@@ -48,7 +48,7 @@ public class HttpJsonOutputPlugin
         public Optional<@NotBlank String> getPath();
 
         @Config("headers")
-        @ConfigDefault("{}")
+        @ConfigDefault("[]")
         public List<@Size(min = 1, max = 1) Map<@NotBlank String, @NotBlank String>> getHeaders();
 
         @Config("method")
