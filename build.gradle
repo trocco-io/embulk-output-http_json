@@ -47,6 +47,9 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter"
     testImplementation "org.embulk:embulk-core:${embulkVersion}"
     testImplementation "org.embulk:embulk-deps:${embulkVersion}"
+    testImplementation "org.embulk:embulk-input-config:${embulkVersion}"
+    testImplementation 'com.github.tomakehurst:wiremock-jre8:2.32.0'
+
 }
 
 embulkPlugin {

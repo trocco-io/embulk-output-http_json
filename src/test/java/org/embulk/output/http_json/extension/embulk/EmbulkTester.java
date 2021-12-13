@@ -24,7 +24,7 @@ public class EmbulkTester implements AutoCloseable {
     }
 
     public ExecutionResult runOutput(
-            ConfigSource outConfig, SchemaConfig inSchema, List<List<ConfigSource>> inData) {
+            ConfigSource outConfig, SchemaConfig inSchema, List<List<List<Object>>> inData) {
         ConfigSource execConfig = newConfigSource().set("min_output_tasks", 1);
         ConfigSource inConfig =
                 newConfigSource()
