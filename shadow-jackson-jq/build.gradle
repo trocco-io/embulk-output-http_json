@@ -26,5 +26,4 @@ dependencies {
 }
 // Relocate Guava packages since they are incompatible from Embulk's.
 shadowJar {
-    relocate "com.fasterxml.jackson.databind.type", "embulk.output.http_json.com.fasterxml.jackson.databind.type"
 }
