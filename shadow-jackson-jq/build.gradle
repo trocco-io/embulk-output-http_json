@@ -24,6 +24,6 @@ dependencies {
     // TODO: Use a stable release instead of the preview release.
     compile 'net.thisptr:jackson-jq:1.0.0-preview.20210928'
 }
-// Relocate Guava packages since they are incompatible from Embulk's.
+// Relocate some packages since they are incompatible from Embulk's.
 shadowJar {
 }
