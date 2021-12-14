@@ -1,0 +1,15 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "/example"
+    },
+    "response": {
+        "status": 200,
+        "jsonBody": {
+            "message": "Hello world!"
+        },
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    }
+}

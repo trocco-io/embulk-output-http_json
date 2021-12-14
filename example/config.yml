@@ -1,0 +1,29 @@
+in:
+  type: config
+  columns:
+    - name: string_attribute
+      type: string
+    - name: boolean_attribute
+      type: boolean
+    - name: integer_attribute
+      type: long
+    - name: array_attribute
+      type: json
+    - name: map_attribute
+      type: json
+  values:
+    - - ["apple", true, 55, [1, 2], {"a": "b"}]
+      - ["banana", true, 56, [3, 4], {"a": "c"}]
+      - ["orange", true, 56, [3, 4], {"a": "c"}]
+    - - ["peach", true, 58, [8, 9], {"a": "z"}]
+out:
+  type: http_json
+  scheme: http
+  host: localhost
+  port: 8080
+  path: /example
+  method: POST
+  headers: []
+  buffer_size: 2
+  transformer_jq: '{events: (.)}'
+  success_condition_jq: '.status_code_class == 200'
