@@ -30,6 +30,7 @@ An embulk output plugin to egest records as json with [`jq`](https://github.com/
 - **default_timezone**: Default timezone. (string, default: `"UTC"`)
 - **default_timestamp_format**: Default timestamp format. (string, default: `"%Y-%m-%d %H:%M:%S %z"`)
 - **default_date**: Default date. (string, default: `"1970-01-01"`)
+- **progress_log_output_interval_seconds**: Progress log output interval in seconds. if set `0`, never output progress log. (string, default: `0`)
 
 ### About `transformer_jq`
 
