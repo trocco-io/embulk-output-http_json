@@ -117,5 +117,10 @@ public class HttpJsonOutputPlugin
         @ConfigDefault("\"1970-01-01\"")
         @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$")
         public String getDefaultDate();
+
+        @Config("progress_log_output_interval_seconds")
+        @ConfigDefault("0")
+        @PositiveOrZero
+        public int getProgressLogOutputIntervalSeconds();
     }
 }

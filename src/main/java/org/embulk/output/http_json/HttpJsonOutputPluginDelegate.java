@@ -27,6 +27,7 @@ import org.embulk.output.http_json.jaxrs.JAXRSObjectNodeResponseEntityReader;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.output.http_json.jq.JQ;
+import org.embulk.output.http_json.util.ProgressLogger;
 import org.embulk.output.http_json.validator.BeanValidator;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
@@ -57,6 +58,7 @@ public class HttpJsonOutputPluginDelegate
         validateJsonQuery("transformer_jq", task.getTransformerJq());
         validateJsonQuery("retryable_condition_jq", task.getRetryableConditionJq());
         validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());
+        ProgressLogger.setSchedule(task.getProgressLogOutputIntervalSeconds());
     }
 
     private void validateJsonQuery(String name, String jqFilter) {
@@ -97,6 +99,7 @@ public class HttpJsonOutputPluginDelegate
     @Override
     public ConfigDiff egestEmbulkData(
             PluginTask task, Schema schema, int taskCount, List<TaskReport> taskReports) {
+        ProgressLogger.finish();
         taskReports.forEach(report -> logger.info(report.toString()));
         return configMapperFactory.newConfigDiff();
     }
@@ -111,7 +114,10 @@ public class HttpJsonOutputPluginDelegate
     private <A, R> List<R> eachSlice(List<A> list, int sliceSize, Function<List<A>, R> function) {
         List<R> resultBuilder = new ArrayList<>();
         for (int i = 0; i < list.size(); i += sliceSize) {
+            long start = System.currentTimeMillis();
             R result = function.apply(list.subList(i, Integer.min(i + sliceSize, list.size())));
+            ProgressLogger.incrementRequestCount();
+            ProgressLogger.addElapsedTime(System.currentTimeMillis() - start);
             resultBuilder.add(result);
         }
         return Collections.unmodifiableList(resultBuilder);
