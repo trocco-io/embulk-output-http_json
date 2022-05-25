@@ -18,11 +18,15 @@ public class ProgressLogger {
 
     private static ScheduledExecutorService service;
 
-    private ProgressLogger() {}
+    private final int loggingInterval;
 
-    public static void initializeLogger(int loggingInterval) {
+    public ProgressLogger(int loggingInterval) {
+        this.loggingInterval = loggingInterval;
+    }
+
+    public void initializeLogger() {
         if (service != null) {
-            throw new UnsupportedOperationException("already scheduled.");
+            throw new UnsupportedOperationException("already initialized.");
         }
         if (loggingInterval == 0) {
             logger.warn("disabled progress log.");
@@ -42,7 +46,7 @@ public class ProgressLogger {
                 TimeUnit.SECONDS);
     }
 
-    public static void finish() {
+    public void finish() {
         if (service != null) {
             outputProgress();
             if (!service.isShutdown()) {
@@ -51,15 +55,15 @@ public class ProgressLogger {
         }
     }
 
-    public static void incrementRequestCount() {
+    public void incrementRequestCount() {
         globalRequestCount.incrementAndGet();
     }
 
-    public static void addElapsedTime(long elapsedTIme) {
+    public void addElapsedTime(long elapsedTIme) {
         globalElapsedTime.addAndGet(elapsedTIme);
     }
 
-    private static void outputProgress() {
+    private void outputProgress() {
         long requestCount = globalRequestCount.get();
         long elapsedTime = globalElapsedTime.get();
         if (requestCount == 0) {

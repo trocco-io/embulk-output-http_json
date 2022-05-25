@@ -48,6 +48,8 @@ public class HttpJsonOutputPluginDelegate
 
     private final ConfigMapperFactory configMapperFactory;
 
+    private static ProgressLogger progressLogger;
+
     public HttpJsonOutputPluginDelegate(ConfigMapperFactory configMapperFactory) {
         this.configMapperFactory = configMapperFactory;
     }
@@ -62,7 +64,8 @@ public class HttpJsonOutputPluginDelegate
     }
 
     private void configureTask(PluginTask task) {
-        ProgressLogger.initializeLogger(task.getLoggingInterval());
+        progressLogger = new ProgressLogger(task.getLoggingInterval());
+        progressLogger.initializeLogger();
     }
 
     private void validateJsonQuery(String name, String jqFilter) {
@@ -103,7 +106,7 @@ public class HttpJsonOutputPluginDelegate
     @Override
     public ConfigDiff egestEmbulkData(
             PluginTask task, Schema schema, int taskCount, List<TaskReport> taskReports) {
-        ProgressLogger.finish();
+        progressLogger.finish();
         taskReports.forEach(report -> logger.info(report.toString()));
         return configMapperFactory.newConfigDiff();
     }
@@ -120,8 +123,8 @@ public class HttpJsonOutputPluginDelegate
         for (int i = 0; i < list.size(); i += sliceSize) {
             long start = System.currentTimeMillis();
             R result = function.apply(list.subList(i, Integer.min(i + sliceSize, list.size())));
-            ProgressLogger.incrementRequestCount();
-            ProgressLogger.addElapsedTime(System.currentTimeMillis() - start);
+            progressLogger.incrementRequestCount();
+            progressLogger.addElapsedTime(System.currentTimeMillis() - start);
             resultBuilder.add(result);
         }
         return Collections.unmodifiableList(resultBuilder);
