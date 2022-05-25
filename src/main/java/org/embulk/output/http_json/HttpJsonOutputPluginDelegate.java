@@ -54,10 +54,14 @@ public class HttpJsonOutputPluginDelegate
 
     @Override
     public void validateOutputTask(PluginTask task, Schema embulkSchema, int taskCount) {
+        configureTask(task);
         BeanValidator.validate(task);
         validateJsonQuery("transformer_jq", task.getTransformerJq());
         validateJsonQuery("retryable_condition_jq", task.getRetryableConditionJq());
         validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());
+    }
+
+    private void configureTask(PluginTask task) {
         ProgressLogger.initializeLogger(task.getLoggingInterval());
     }
 
