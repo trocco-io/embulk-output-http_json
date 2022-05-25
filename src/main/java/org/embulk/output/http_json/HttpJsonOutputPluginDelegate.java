@@ -27,6 +27,7 @@ import org.embulk.output.http_json.jaxrs.JAXRSObjectNodeResponseEntityReader;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.output.http_json.jq.JQ;
+import org.embulk.output.http_json.util.Durations;
 import org.embulk.output.http_json.util.ProgressLogger;
 import org.embulk.output.http_json.validator.BeanValidator;
 import org.embulk.spi.DataException;
@@ -64,7 +65,7 @@ public class HttpJsonOutputPluginDelegate
     }
 
     private void configureTask(PluginTask task) {
-        progressLogger = new ProgressLogger(task.getLoggingInterval());
+        progressLogger = new ProgressLogger(Durations.parseDuration(task.getLoggingInterval()));
     }
 
     private void validateJsonQuery(String name, String jqFilter) {

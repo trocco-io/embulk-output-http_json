@@ -1,5 +1,6 @@
 package org.embulk.output.http_json.util;
 
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -18,21 +19,22 @@ public class ProgressLogger {
     private final AtomicLong globalRequestCount = new AtomicLong(0);
     private final AtomicLong globalElapsedTime = new AtomicLong(0);
 
-    public ProgressLogger(int loggingInterval) {
+    public ProgressLogger(Duration loggingInterval) {
         service =
                 Executors.newSingleThreadScheduledExecutor(
                         new ThreadFactoryBuilder()
                                 .setNameFormat(ProgressLogger.class.getSimpleName())
                                 .build());
-        if (loggingInterval > 0) {
-            setSchedule(loggingInterval);
+        long loggingIntervalSecond = loggingInterval.getSeconds();
+        if (loggingIntervalSecond > 0) {
+            setSchedule(loggingIntervalSecond);
         } else {
             logger.warn("disabled progress log.");
             service.shutdown();
         }
     }
 
-    private void setSchedule(int loggingInterval) {
+    private void setSchedule(long loggingInterval) {
         service.scheduleAtFixedRate(
                 () -> outputProgress(), INITIAL_DELAY_SECONDS, loggingInterval, TimeUnit.SECONDS);
     }

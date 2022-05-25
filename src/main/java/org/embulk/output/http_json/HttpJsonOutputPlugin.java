@@ -119,8 +119,7 @@ public class HttpJsonOutputPlugin
         public String getDefaultDate();
 
         @Config("logging_interval")
-        @ConfigDefault("0")
-        @PositiveOrZero
-        public int getLoggingInterval();
+        @ConfigDefault("\"0s\"")
+        public String getLoggingInterval();
     }
 }
