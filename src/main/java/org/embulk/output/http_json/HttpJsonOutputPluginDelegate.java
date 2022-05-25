@@ -65,7 +65,6 @@ public class HttpJsonOutputPluginDelegate
 
     private void configureTask(PluginTask task) {
         progressLogger = new ProgressLogger(task.getLoggingInterval());
-        progressLogger.initializeLogger();
     }
 
     private void validateJsonQuery(String name, String jqFilter) {

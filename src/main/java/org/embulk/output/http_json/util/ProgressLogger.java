@@ -2,7 +2,6 @@ package org.embulk.output.http_json.util;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jersey.repackaged.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -11,32 +10,27 @@ import org.slf4j.LoggerFactory;
 
 public class ProgressLogger {
     private static final long INITIAL_DELAY_SECONDS = 1;
-    private static AtomicLong globalRequestCount = new AtomicLong(0);
-    private static AtomicLong globalElapsedTime = new AtomicLong(0);
 
     private static final Logger logger = LoggerFactory.getLogger(ProgressLogger.class);
 
-    private static ScheduledExecutorService service;
+    private final ScheduledExecutorService service =
+            Executors.newSingleThreadScheduledExecutor(
+                    new ThreadFactoryBuilder()
+                            .setNameFormat(ProgressLogger.class.getSimpleName())
+                            .build());
 
-    private final int loggingInterval;
+    private AtomicLong globalRequestCount = new AtomicLong(0);
+    private AtomicLong globalElapsedTime = new AtomicLong(0);
 
     public ProgressLogger(int loggingInterval) {
-        this.loggingInterval = loggingInterval;
+        if (loggingInterval > 0) {
+            setSchedule(loggingInterval);
+        } else {
+            logger.warn("disabled progress log.");
+        }
     }
 
-    public void initializeLogger() {
-        if (service != null) {
-            throw new UnsupportedOperationException("already initialized.");
-        }
-        if (loggingInterval == 0) {
-            logger.warn("disabled progress log.");
-            return;
-        }
-        ThreadFactory factory =
-                new ThreadFactoryBuilder()
-                        .setNameFormat(ProgressLogger.class.getSimpleName())
-                        .build();
-        service = Executors.newSingleThreadScheduledExecutor(factory);
+    private void setSchedule(int loggingInterval) {
         service.scheduleAtFixedRate(
                 () -> {
                     outputProgress();
@@ -47,11 +41,9 @@ public class ProgressLogger {
     }
 
     public void finish() {
-        if (service != null) {
+        if (!service.isShutdown()) {
             outputProgress();
-            if (!service.isShutdown()) {
-                service.shutdown();
-            }
+            service.shutdown();
         }
     }
 
