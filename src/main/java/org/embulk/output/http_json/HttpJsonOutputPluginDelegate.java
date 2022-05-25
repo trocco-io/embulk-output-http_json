@@ -58,7 +58,7 @@ public class HttpJsonOutputPluginDelegate
         validateJsonQuery("transformer_jq", task.getTransformerJq());
         validateJsonQuery("retryable_condition_jq", task.getRetryableConditionJq());
         validateJsonQuery("success_condition_jq", task.getSuccessConditionJq());
-        ProgressLogger.setSchedule(task.getProgressLogOutputIntervalSeconds());
+        ProgressLogger.setSchedule(task.getLoggingInterval());
     }
 
     private void validateJsonQuery(String name, String jqFilter) {

@@ -118,9 +118,9 @@ public class HttpJsonOutputPlugin
         @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$")
         public String getDefaultDate();
 
-        @Config("progress_log_output_interval_seconds")
+        @Config("logging_interval")
         @ConfigDefault("0")
         @PositiveOrZero
-        public int getProgressLogOutputIntervalSeconds();
+        public int getLoggingInterval();
     }
 }

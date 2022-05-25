@@ -20,11 +20,11 @@ public class ProgressLogger {
 
     private ProgressLogger() {}
 
-    public static void setSchedule(long delaySecond) {
+    public static void setSchedule(int loggingInterval) {
         if (service != null) {
             throw new UnsupportedOperationException("already scheduled.");
         }
-        if (delaySecond == 0) {
+        if (loggingInterval == 0) {
             return;
         }
         ThreadFactory factory =
@@ -37,7 +37,7 @@ public class ProgressLogger {
                     outputProgress();
                 },
                 INITIAL_DELAY_SECONDS,
-                delaySecond,
+                loggingInterval,
                 TimeUnit.SECONDS);
     }
 
