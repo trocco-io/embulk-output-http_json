@@ -27,7 +27,7 @@ import org.embulk.output.http_json.jaxrs.JAXRSObjectNodeResponseEntityReader;
 import org.embulk.output.http_json.jq.IllegalJQProcessingException;
 import org.embulk.output.http_json.jq.InvalidJQFilterException;
 import org.embulk.output.http_json.jq.JQ;
-import org.embulk.output.http_json.util.ProgressLogger;
+import org.embulk.output.http_json.util.GlobalProgressLogger;
 import org.embulk.output.http_json.validator.BeanValidator;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Schema;
@@ -48,7 +48,7 @@ public class HttpJsonOutputPluginDelegate
 
     private final ConfigMapperFactory configMapperFactory;
 
-    private static ProgressLogger progressLogger;
+    private static GlobalProgressLogger globalProgressLogger;
 
     public HttpJsonOutputPluginDelegate(ConfigMapperFactory configMapperFactory) {
         this.configMapperFactory = configMapperFactory;
@@ -64,8 +64,8 @@ public class HttpJsonOutputPluginDelegate
     }
 
     private void configureTask(PluginTask task) {
-        progressLogger = new ProgressLogger(task.getLoggingInterval());
-        progressLogger.initializeLogger();
+        globalProgressLogger = new GlobalProgressLogger(task.getLoggingInterval());
+        globalProgressLogger.initializeLogger();
     }
 
     private void validateJsonQuery(String name, String jqFilter) {
@@ -106,7 +106,7 @@ public class HttpJsonOutputPluginDelegate
     @Override
     public ConfigDiff egestEmbulkData(
             PluginTask task, Schema schema, int taskCount, List<TaskReport> taskReports) {
-        progressLogger.finish();
+        globalProgressLogger.finish();
         taskReports.forEach(report -> logger.info(report.toString()));
         return configMapperFactory.newConfigDiff();
     }
@@ -123,8 +123,8 @@ public class HttpJsonOutputPluginDelegate
         for (int i = 0; i < list.size(); i += sliceSize) {
             long start = System.currentTimeMillis();
             R result = function.apply(list.subList(i, Integer.min(i + sliceSize, list.size())));
-            progressLogger.incrementRequestCount();
-            progressLogger.addElapsedTime(System.currentTimeMillis() - start);
+            globalProgressLogger.incrementRequestCount();
+            globalProgressLogger.addElapsedTime(System.currentTimeMillis() - start);
             resultBuilder.add(result);
         }
         return Collections.unmodifiableList(resultBuilder);

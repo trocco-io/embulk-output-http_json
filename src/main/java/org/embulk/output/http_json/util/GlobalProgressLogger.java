@@ -9,18 +9,18 @@ import jersey.repackaged.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ProgressLogger {
+public class GlobalProgressLogger {
     private static final long INITIAL_DELAY_SECONDS = 1;
     private static AtomicLong globalRequestCount = new AtomicLong(0);
     private static AtomicLong globalElapsedTime = new AtomicLong(0);
 
-    private static final Logger logger = LoggerFactory.getLogger(ProgressLogger.class);
+    private static final Logger logger = LoggerFactory.getLogger(GlobalProgressLogger.class);
 
     private static ScheduledExecutorService service;
 
     private final int loggingInterval;
 
-    public ProgressLogger(int loggingInterval) {
+    public GlobalProgressLogger(int loggingInterval) {
         this.loggingInterval = loggingInterval;
     }
 
@@ -34,7 +34,7 @@ public class ProgressLogger {
         }
         ThreadFactory factory =
                 new ThreadFactoryBuilder()
-                        .setNameFormat(ProgressLogger.class.getSimpleName())
+                        .setNameFormat(GlobalProgressLogger.class.getSimpleName())
                         .build();
         service = Executors.newSingleThreadScheduledExecutor(factory);
         service.scheduleAtFixedRate(
