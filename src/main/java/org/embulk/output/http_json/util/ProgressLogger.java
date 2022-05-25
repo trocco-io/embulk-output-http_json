@@ -13,36 +13,33 @@ public class ProgressLogger {
 
     private static final Logger logger = LoggerFactory.getLogger(ProgressLogger.class);
 
-    private final ScheduledExecutorService service =
-            Executors.newSingleThreadScheduledExecutor(
-                    new ThreadFactoryBuilder()
-                            .setNameFormat(ProgressLogger.class.getSimpleName())
-                            .build());
+    private final ScheduledExecutorService service;
 
     private final AtomicLong globalRequestCount = new AtomicLong(0);
     private final AtomicLong globalElapsedTime = new AtomicLong(0);
 
     public ProgressLogger(int loggingInterval) {
+        service =
+                Executors.newSingleThreadScheduledExecutor(
+                        new ThreadFactoryBuilder()
+                                .setNameFormat(ProgressLogger.class.getSimpleName())
+                                .build());
         if (loggingInterval > 0) {
             setSchedule(loggingInterval);
         } else {
             logger.warn("disabled progress log.");
+            service.shutdown();
         }
     }
 
     private void setSchedule(int loggingInterval) {
         service.scheduleAtFixedRate(
-                () -> {
-                    outputProgress();
-                },
-                INITIAL_DELAY_SECONDS,
-                loggingInterval,
-                TimeUnit.SECONDS);
+                () -> outputProgress(), INITIAL_DELAY_SECONDS, loggingInterval, TimeUnit.SECONDS);
     }
 
     public void finish() {
         if (!service.isShutdown()) {
-            outputProgress();
+            service.submit(() -> outputProgress());
             service.shutdown();
         }
     }
