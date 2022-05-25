@@ -19,8 +19,8 @@ public class ProgressLogger {
                             .setNameFormat(ProgressLogger.class.getSimpleName())
                             .build());
 
-    private AtomicLong globalRequestCount = new AtomicLong(0);
-    private AtomicLong globalElapsedTime = new AtomicLong(0);
+    private final AtomicLong globalRequestCount = new AtomicLong(0);
+    private final AtomicLong globalElapsedTime = new AtomicLong(0);
 
     public ProgressLogger(int loggingInterval) {
         if (loggingInterval > 0) {
