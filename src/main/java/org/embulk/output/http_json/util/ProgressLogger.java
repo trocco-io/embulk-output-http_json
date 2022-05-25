@@ -25,6 +25,7 @@ public class ProgressLogger {
             throw new UnsupportedOperationException("already scheduled.");
         }
         if (loggingInterval == 0) {
+            logger.warn("disabled progress log.");
             return;
         }
         ThreadFactory factory =
