@@ -20,7 +20,7 @@ public class ProgressLogger {
 
     private ProgressLogger() {}
 
-    public static void setSchedule(int loggingInterval) {
+    public static void initializeLogger(int loggingInterval) {
         if (service != null) {
             throw new UnsupportedOperationException("already scheduled.");
         }
