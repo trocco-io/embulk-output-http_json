@@ -117,5 +117,9 @@ public class HttpJsonOutputPlugin
         @ConfigDefault("\"1970-01-01\"")
         @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$")
         public String getDefaultDate();
+
+        @Config("logging_interval")
+        @ConfigDefault("\"0s\"")
+        public String getLoggingInterval();
     }
 }
